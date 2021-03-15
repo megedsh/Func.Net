@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Funk.Net
+namespace Func.Net
 {
     //Optional implementation for functional programming
 
