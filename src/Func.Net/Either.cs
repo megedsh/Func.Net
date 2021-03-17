@@ -31,12 +31,12 @@ namespace Func.Net
                 throw new ArgumentNullException(nameof(leftFunc));
             }
 
-            if (rightConsumer == null)
+            if (rightFunc == null)
             {
-                throw new ArgumentNullException(nameof(rightConsumer));
+                throw new ArgumentNullException(nameof(rightFunc));
             }
 
-            return IsLeft ? leftFunc(m_left) : rightConsumer(m_right);
+            return IsLeft ? leftFunc(m_left) : rightFunc(m_right);
         }
 
         public void Match (Action<TL> leftConsumer, Action<TR> rightConsumer)

@@ -7,21 +7,21 @@ namespace Func.Net
 
     public static class Optional
     {
-        public static Optional<T> Of<T>(T value) => new Optional<T>(value, true);
+        public static Optional<T> Of<T>(T         value) => new Optional<T>(value, true);
         public static Optional<T> OfNullable<T>(T value) => value == null ? Empty<T>() : Of(value);
-        public static Optional<T> Empty<T>() => new Optional<T>(default(T), false);
+        public static Optional<T> Empty<T>()             => new Optional<T>(default(T), false);
     }
 
     public struct Optional<T> : IEquatable<Optional<T>>, IComparable<Optional<T>>
     {
         private static readonly Optional<T> s_empty = Optional.Empty<T>();
-        private readonly T m_value;
-        public bool IsPresent { get; }
-        public bool IsEmpty => !IsPresent;
+        private readonly        T           m_value;
+        public                  bool        IsPresent { get; }
+        public                  bool        IsEmpty   => !IsPresent;
 
         internal Optional(T value, bool hasValue)
         {
-            m_value = value;
+            m_value   = value;
             IsPresent = hasValue;
         }
 
@@ -53,10 +53,7 @@ namespace Func.Net
 
         public Optional<T> Filter(Func<T, bool> predicate)
         {
-            if (predicate == null)
-            {
-                throw new ArgumentNullException(nameof(predicate));
-            }
+            Validations.RequireNonNull(predicate, nameof(predicate));
 
             if (!IsPresent)
             {
@@ -68,21 +65,13 @@ namespace Func.Net
 
         public Optional<TResult> Map<TResult>(Func<T, TResult> mapper)
         {
-            if (mapper == null)
-            {
-                throw new ArgumentNullException(nameof(mapper));
-            }
-
+            Validations.RequireNonNull(mapper, nameof(mapper));
             return Match(v => Optional.OfNullable(mapper(v)), Optional.Empty<TResult>);
         }
 
         public Optional<TResult> FlatMap<TResult>(Func<T, Optional<TResult>> mapper)
         {
-            if (mapper == null)
-            {
-                throw new ArgumentNullException(nameof(mapper));
-            }
-
+            Validations.RequireNonNull(mapper, nameof(mapper));
             if (IsPresent)
             {
                 return mapper(m_value);
@@ -95,10 +84,7 @@ namespace Func.Net
 
         public T OrElse(Func<T> factory)
         {
-            if (factory == null)
-            {
-                throw new ArgumentNullException(nameof(factory));
-            }
+            Validations.RequireNonNull(factory, nameof(factory));
 
             return IsPresent ? m_value : factory();
         }
@@ -107,21 +93,14 @@ namespace Func.Net
 
         public Optional<T> OrOptional(Func<T> factory)
         {
-            if (factory == null)
-            {
-                throw new ArgumentNullException(nameof(factory));
-            }
-
+            Validations.RequireNonNull(factory, nameof(factory));
             return IsPresent ? this : Optional.OfNullable(factory());
         }
 
         public T OrElseThrow<TException>(Func<TException> exceptionFactory)
             where TException : Exception
         {
-            if (exceptionFactory == null)
-            {
-                throw new ArgumentNullException(nameof(exceptionFactory));
-            }
+            Validations.RequireNonNull(exceptionFactory, nameof(exceptionFactory));
 
             if (IsPresent)
             {
@@ -133,31 +112,15 @@ namespace Func.Net
 
         public TResult Match<TResult>(Func<T, TResult> onPresent, Func<TResult> onEmpty)
         {
-            if (onPresent == null)
-            {
-                throw new ArgumentNullException(nameof(onPresent));
-            }
-
-            if (onEmpty == null)
-            {
-                throw new ArgumentNullException(nameof(onEmpty));
-            }
-
+            Validations.RequireNonNull(onPresent, nameof(onPresent));
+            Validations.RequireNonNull(onEmpty,   nameof(onEmpty));
             return IsPresent ? onPresent(m_value) : onEmpty();
         }
 
         public void Match(Action<T> onPresent, Action onEmpty)
         {
-            if (onPresent == null)
-            {
-                throw new ArgumentNullException(nameof(onPresent));
-            }
-
-            if (onEmpty == null)
-            {
-                throw new ArgumentNullException(nameof(onEmpty));
-            }
-
+            Validations.RequireNonNull(onPresent, nameof(onPresent));
+            Validations.RequireNonNull(onEmpty,   nameof(onEmpty));
             if (IsPresent)
             {
                 onPresent(m_value);
