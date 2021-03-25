@@ -133,7 +133,7 @@ namespace Func.Net
 
         public bool Equals(Optional<T> other)
         {
-            if (!IsPresent && !other.IsPresent)
+            if (IsEmpty && other.IsEmpty)
             {
                 return true;
             }
@@ -165,12 +165,12 @@ namespace Func.Net
 
         public int CompareTo(Optional<T> other)
         {
-            if (IsPresent && !other.IsPresent)
+            if (IsPresent && other.IsEmpty)
             {
                 return 1;
             }
 
-            if (!IsPresent && other.IsPresent)
+            if (IsEmpty && other.IsPresent)
             {
                 return -1;
             }

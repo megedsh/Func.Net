@@ -19,9 +19,9 @@ namespace Func.Net.Tests
             ICase<int, string>[] cases = Case.ArrayOf(Case(1, "One"),
                                                       Case(2, "Two"),
                                                       Case(Any<int>(), "?"));
-
-            string m = 5.Match().Of(cases);
-            string of = 2.Match().Of(cases);
+            
+            Assert.AreEqual("?", 5.Match().Of(cases));
+            Assert.AreEqual("Two", 2.Match().Of(cases));
         }
     }
 }
