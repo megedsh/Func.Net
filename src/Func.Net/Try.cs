@@ -7,11 +7,25 @@ namespace Func.Net
         Exception Cause     { get; }
         bool      IsFailure { get; }
         bool      IsSuccess { get; }
+        ITry OnFailure(Action<Exception> action);
+        ITry OnSuccess(Action action);
+        ITry Match(Action onSuccessAction, Action<Exception> onExceptionAction);
+        void Finally(Action action);
     }
 
     public interface ITry<T> : ITry
     {
         T Get();
+        new Try<T> OnFailure(Action<Exception> action);
+        new Try<T> OnSuccess(Action<T> action);
+        new Try<T> Match(Action<T> onSuccessAction, Action<Exception> onExceptionAction);
+        Try<T> OrElseTry(Try<T> other);
+        Try<T> OrElseTry(Func<Exception, Try<T>> otherTryFactory);
+        T OrElse(T otherValue);
+        T OrElse(Func<Exception, T> otherFactory);
+        T OrElseThrow();
+        Optional<T> ToOptional();
+        Either<T, Exception> ToEither();
     }
 
     public static class Try
@@ -33,6 +47,8 @@ namespace Func.Net
                 return Failure<object>(ex);
             }
         }
+
+        
 
         public static ITry<T> Of<T>(Func<T> func)
         {
@@ -71,6 +87,18 @@ namespace Func.Net
         public abstract T         Get();
         public abstract Exception Cause { get; }
 
+        ITry ITry.OnFailure(Action<Exception> action) => OnFailure(action);
+        public ITry OnSuccess(Action action)
+        {
+            Validations.RequireNonNull(action);
+
+            if (IsSuccess)
+            {
+                action();
+            }
+            return this;
+        }
+        
         public Try<T> OnFailure(Action<Exception> action)
         {
             if (action == null)
@@ -88,10 +116,7 @@ namespace Func.Net
 
         public Try<T> OnSuccess(Action<T> action)
         {
-            if (action == null)
-            {
-                throw new ArgumentNullException(nameof(action));
-            }
+            Validations.RequireNonNull(action);
 
             if (IsSuccess)
             {
@@ -101,18 +126,26 @@ namespace Func.Net
             return this;
         }
 
+        public ITry Match(Action onSuccessAction, Action<Exception> onExceptionAction)
+        {
+            Validations.RequireNonNull(onSuccessAction,   nameof(onSuccessAction));
+            Validations.RequireNonNull(onExceptionAction, nameof(onExceptionAction));
+            if (IsSuccess)
+            {
+                onSuccessAction();
+            }
+            else
+            {
+                onExceptionAction(Cause);
+            }
+
+            return this;
+        }
+
         public Try<T> Match(Action<T> onSuccessAction, Action<Exception> onExceptionAction)
         {
-            if (onSuccessAction == null)
-            {
-                throw new ArgumentNullException(nameof(onSuccessAction));
-            }
-
-            if (onExceptionAction == null)
-            {
-                throw new ArgumentNullException(nameof(onExceptionAction));
-            }
-
+            Validations.RequireNonNull(onSuccessAction, nameof(onSuccessAction));
+            Validations.RequireNonNull(onExceptionAction, nameof(onExceptionAction));
             if (IsSuccess)
             {
                 onSuccessAction(Get());
@@ -125,7 +158,7 @@ namespace Func.Net
             return this;
         }
 
-        public Try<T> OrElse(Try<T> other)
+        public Try<T> OrElseTry(Try<T> other)
         {
             if (other == null)
             {
@@ -135,7 +168,7 @@ namespace Func.Net
             return IsSuccess ? this : other;
         }
 
-        public Try<T> OrElse(Func<Exception, Try<T>> otherTryFactory)
+        public Try<T> OrElseTry(Func<Exception, Try<T>> otherTryFactory)
         {
             if (otherTryFactory == null)
             {

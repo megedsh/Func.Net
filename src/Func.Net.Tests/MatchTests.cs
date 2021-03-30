@@ -23,5 +23,6 @@ namespace Func.Net.Tests
             Assert.AreEqual("?", 5.Match().Of(cases));
             Assert.AreEqual("Two", 2.Match().Of(cases));
         }
+
     }
 }
