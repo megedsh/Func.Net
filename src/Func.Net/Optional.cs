@@ -7,7 +7,12 @@ namespace Func.Net
 
     public static class Optional
     {
-        public static Optional<T> Of<T>(T         value) => new Optional<T>(value, true);
+        public static Optional<T> Of<T>(T         value)
+        {
+            Validations.RequireNonNull(value);
+            return new Optional<T>(value, true);
+        }
+
         public static Optional<T> OfNullable<T>(T value) => value == null ? Empty<T>() : Of(value);
         public static Optional<T> Empty<T>()             => new Optional<T>(default(T), false);
     }
@@ -18,6 +23,12 @@ namespace Func.Net
         private readonly        T           m_value;
         public                  bool        IsPresent { get; }
         public                  bool        IsEmpty   => !IsPresent;
+
+
+        public static Optional<T> Empty()
+        {
+            return s_empty;
+        }
 
         internal Optional(T value, bool hasValue)
         {
@@ -66,7 +77,7 @@ namespace Func.Net
         public Optional<TResult> Map<TResult>(Func<T, TResult> mapper)
         {
             Validations.RequireNonNull(mapper, nameof(mapper));
-            return Match(v => Optional.OfNullable(mapper(v)), Optional.Empty<TResult>);
+            return doMatch(v => Optional.OfNullable(mapper(v)), Optional.Empty<TResult>);
         }
 
         public Optional<TResult> FlatMap<TResult>(Func<T, Optional<TResult>> mapper)
@@ -111,6 +122,12 @@ namespace Func.Net
         }
 
         public TResult Match<TResult>(Func<T, TResult> onPresent, Func<TResult> onEmpty)
+        {
+            return doMatch(onPresent, onEmpty);
+        }
+
+
+        private TResult doMatch<TResult>(Func<T, TResult> onPresent, Func<TResult> onEmpty)
         {
             Validations.RequireNonNull(onPresent, nameof(onPresent));
             Validations.RequireNonNull(onEmpty,   nameof(onEmpty));
