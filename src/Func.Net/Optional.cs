@@ -13,26 +13,21 @@ namespace Func.Net
             return new Optional<T>(value, true);
         }
 
-        public static Optional<T> OfNullable<T>(T value) => value == null ? Empty<T>() : Of(value);
-        public static Optional<T> Empty<T>()             => new Optional<T>(default(T), false);
+        public static Optional<T> OfNullable<T>(T value) => value == null ? Optional<T>.Empty() : Of(value);
+        public static Optional<T> Empty<T>()             => Optional<T>.Empty();
     }
 
     public struct Optional<T> : IEquatable<Optional<T>>, IComparable<Optional<T>>
     {
-        private static readonly Optional<T> s_empty = Optional.Empty<T>();
+        public static Optional<T> Empty() => s_empty;
+        private static readonly Optional<T> s_empty = new Optional<T>(default(T), false);
         private readonly        T           m_value;
-        public                  bool        IsPresent { get; }
-        public                  bool        IsEmpty   => !IsPresent;
-
-
-        public static Optional<T> Empty()
-        {
-            return s_empty;
-        }
+        public bool IsPresent { get; }
+        public bool IsEmpty => !IsPresent;
 
         internal Optional(T value, bool hasValue)
         {
-            m_value   = value;
+            m_value = value;
             IsPresent = hasValue;
         }
 
@@ -65,8 +60,7 @@ namespace Func.Net
         public Optional<T> Filter(Func<T, bool> predicate)
         {
             Validations.RequireNonNull(predicate, nameof(predicate));
-
-            if (!IsPresent)
+            if (IsEmpty)
             {
                 return this;
             }
@@ -77,7 +71,7 @@ namespace Func.Net
         public Optional<TResult> Map<TResult>(Func<T, TResult> mapper)
         {
             Validations.RequireNonNull(mapper, nameof(mapper));
-            return doMatch(v => Optional.OfNullable(mapper(v)), Optional.Empty<TResult>);
+            return doMatch(v => Optional.OfNullable(mapper(v)), Optional<TResult>.Empty);
         }
 
         public Optional<TResult> FlatMap<TResult>(Func<T, Optional<TResult>> mapper)
@@ -88,7 +82,7 @@ namespace Func.Net
                 return mapper(m_value);
             }
 
-            return Optional.Empty<TResult>();
+            return Optional<TResult>.Empty();
         }
 
         public T OrElse(T other) => IsPresent ? m_value : other;
@@ -96,7 +90,6 @@ namespace Func.Net
         public T OrElse(Func<T> factory)
         {
             Validations.RequireNonNull(factory, nameof(factory));
-
             return IsPresent ? m_value : factory();
         }
 
@@ -112,7 +105,6 @@ namespace Func.Net
             where TException : Exception
         {
             Validations.RequireNonNull(exceptionFactory, nameof(exceptionFactory));
-
             if (IsPresent)
             {
                 return m_value;
@@ -125,7 +117,6 @@ namespace Func.Net
         {
             return doMatch(onPresent, onEmpty);
         }
-
 
         private TResult doMatch<TResult>(Func<T, TResult> onPresent, Func<TResult> onEmpty)
         {
@@ -146,6 +137,22 @@ namespace Func.Net
             {
                 onEmpty();
             }
+        }
+
+        public Optional<T> PeekEmpty(Action onEmpty)
+        {
+            Validations.RequireNonNull(onEmpty,   nameof(onEmpty));
+            if (IsEmpty)
+                onEmpty();
+            return this;
+        }
+
+        public Optional<T> PeekPresent(Action<T> onPresent)
+        {
+            Validations.RequireNonNull(onPresent, nameof(onPresent));
+            if (IsPresent)
+                onPresent(m_value);
+            return this;
         }
 
         public bool Equals(Optional<T> other)

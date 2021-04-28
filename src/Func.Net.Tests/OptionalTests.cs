@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using Func.Net.Extensions;
 
@@ -15,8 +16,8 @@ namespace Func.Net.Tests
             Assert.IsTrue(empty.Equals(Optional.Empty<string>()));
             Assert.IsFalse(empty.IsPresent);
             Assert.IsTrue(empty.IsEmpty);
-            Assert.AreEqual(empty.GetHashCode(),     0);
-            Assert.AreEqual(empty.OrElse("x"),       "x");
+            Assert.AreEqual(empty.GetHashCode(), 0);
+            Assert.AreEqual(empty.OrElse("x"), "x");
             Assert.AreEqual(empty.OrElse(() => "y"), "y");
             Assert.ThrowsException<ArgumentNullException>(empty.Get);
             Assert.ThrowsException<ArgumentNullException>(() => empty.OrElseThrow(() => new ArgumentNullException()));
@@ -36,6 +37,16 @@ namespace Func.Net.Tests
             Assert.AreEqual("empty", empty.Match(e => "unexpected", () => "empty"));
 
             Assert.AreEqual("Optional[Empty]", empty.ToString());
+            
+            bool b3 = false;
+            Optional<string> peekEmpty = empty.PeekEmpty(() => b3 = true);
+            Assert.AreEqual(peekEmpty, empty);
+            Assert.IsTrue(b3);
+
+            bool b4 = false;
+            Optional<string> peekEmpty2 = empty.PeekPresent((s) => b4 = true);
+            Assert.AreEqual(peekEmpty2, empty);
+            Assert.IsFalse(b4);
         }
 
         private void checkExists(Optional<string> opt, string expected)
@@ -46,10 +57,10 @@ namespace Func.Net.Tests
             Assert.AreEqual(Optional.Of(expected), opt);
             Assert.AreNotEqual(Optional.Of("unexpected"), opt);
             Assert.AreEqual(expected.GetHashCode(), opt.GetHashCode());
-            Assert.AreEqual(expected,               opt.OrElse("unexpected"));
-            Assert.AreEqual(expected,               opt.OrElse(() => "unexpected"));
-            Assert.AreEqual(expected,               opt.Get());
-            Assert.AreEqual(expected,               opt.OrElseThrow(() => new ArgumentNullException()));
+            Assert.AreEqual(expected, opt.OrElse("unexpected"));
+            Assert.AreEqual(expected, opt.OrElse(() => "unexpected"));
+            Assert.AreEqual(expected, opt.Get());
+            Assert.AreEqual(expected, opt.OrElseThrow(() => new ArgumentNullException()));
 
             bool b = false;
             opt.IfPresent(s => b = true);
@@ -65,6 +76,16 @@ namespace Func.Net.Tests
             Assert.AreEqual(expected, opt.Match(e => e, () => "empty"));
 
             Assert.AreEqual("Optional[" + expected + "]", opt.ToString());
+
+            bool b3 = false;
+            Optional<string> peek1 = opt.PeekEmpty(() => b3 = true);
+            Assert.AreEqual(peek1, opt);
+            Assert.IsFalse(b3);
+
+            bool b4 = false;
+            Optional<string> peek2 = opt.PeekPresent((s) => b4 = true);
+            Assert.AreEqual(peek2, opt);
+            Assert.IsTrue(b4);
         }
 
         [TestMethod]
@@ -73,7 +94,7 @@ namespace Func.Net.Tests
             checkEmpty(Optional.Empty<string>());
             Assert.ThrowsException<NullReferenceException>(() => Optional.Of((string)null));
             checkEmpty(Optional.OfNullable((string)null));
-            checkExists(Optional.Empty<string>().OrOptional("foo"),       "foo");
+            checkExists(Optional.Empty<string>().OrOptional("foo"), "foo");
             checkExists(Optional.Empty<string>().OrOptional(() => "foo"), "foo");
             checkExists(Optional.Of("foo").OrOptional(() => { Assert.Fail(); return "bar"; }), "foo");
         }
@@ -101,6 +122,54 @@ namespace Func.Net.Tests
 
             checkExists(set.GetOptional("Foo"), "Foo");
             checkEmpty(set.GetOptional("foobar"));
+        }
+
+        [TestMethod]
+        public void SelectWherePresentTest()
+        {
+            List<Optional<int>> l = new List<Optional<int>>();
+            l.Add(Optional.Of(1));
+            l.Add(Optional.Of(2));
+            l.Add(Optional.Of(3));
+            l.Add(Optional.Empty<int>());
+
+            int[] array = l.SelectWherePresent().Where(e => e % 2 != 0).ToArray();
+            Assert.AreEqual(2,array.Length);
+        }
+
+        [TestMethod]
+        public void OptionalFirstTest()
+        {
+            List<string> l = new List<string>();
+
+            Optional<string> op1 = l.OptionalFirst();
+            checkEmpty(op1);
+
+            l.Add("1");
+            l.Add("2");
+            l.Add("3");
+
+
+            Optional<string> op2 = l.OptionalFirst();
+            checkExists(op2,"1");
+
+            Optional<string> op3 = l.OptionalFirst(s => s.Equals("2"));
+            checkExists(op3,"2");
+
+            Optional<string> op4 = l.OptionalFirst(s => s.Equals("foo"));
+            checkEmpty(op4);
+        }
+
+        [TestMethod]
+        public void NullableToOptionalTest()
+        {
+            int? nullable = new int?();
+            Optional<string> opt1 = nullable.ToOptional().Map(i => i.ToString());
+            checkEmpty(opt1);
+
+            int? nullable2 = new int?(5);
+            Optional<string> opt2 = nullable2.ToOptional().Map(i => i.ToString());
+            checkExists(opt2,"5");
         }
     }
 }
